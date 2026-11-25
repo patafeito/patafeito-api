@@ -13,7 +13,7 @@ export type PamperResult = {
 };
 
 /**
- * Mimar (Tela 6): tocar no pato. Grátis, +5 de felicidade, conta no máximo uma vez por hora.
+ * Mimar (Tela 6): tocar no pato. Grátis, +5 de felicidade (mais nos patos fáceis), conta no máximo uma vez por hora.
  * Toques repetidos (ou reenviados pelo sync) dentro da hora não são erro: só não contam.
  */
 export async function pamperPet(tx: Transaction, input: { userId: string; now?: Date }): Promise<PamperResult> {

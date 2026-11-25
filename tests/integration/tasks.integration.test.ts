@@ -319,7 +319,7 @@ describe('task completion integration', () => {
 
     const sad = (await request('/api/v1/pets/me', { headers: authorization })).body.data;
     expect(sad).toMatchObject({ overdueStreak: 3, mood: 'sad', dailyGoal: { targetXp: 60, earnedXp: 0 } });
-    expect(sad.happiness).toBeLessThanOrEqual(85);
+    expect(sad.happiness).toBeLessThanOrEqual(89); // Bento (médio): 3 vencidas × 5 × 0,75.
     // Ler de novo não pune de novo.
     expect((await request('/api/v1/pets/me', { headers: authorization })).body.data.overdueStreak).toBe(3);
 
@@ -331,8 +331,8 @@ describe('task completion integration', () => {
     await pool.query("UPDATE pets SET last_activity_at = now() - interval '50 hours', inactivity_penalized_at = NULL, happiness = 100, stats_updated_at = now() WHERE user_id = (SELECT id FROM users WHERE email = $1)", [email]);
     const lonely = (await request('/api/v1/pets/me', { headers: authorization })).body.data;
     expect(lonely.mood).toBe('sad');
-    expect(lonely.happiness).toBe(80);
-    expect((await request('/api/v1/pets/me', { headers: authorization })).body.data.happiness).toBe(80);
+    expect(lonely.happiness).toBe(85); // Bento (médio): 2 janelas × 10 × 0,75.
+    expect((await request('/api/v1/pets/me', { headers: authorization })).body.data.happiness).toBe(85);
   });
 
   integrationTest('mimar é grátis, conta uma vez por hora e os cuidados pagos saíram', async () => {
@@ -344,10 +344,10 @@ describe('task completion integration', () => {
 
     const first = await request('/api/v1/pets/me/interactions', { method: 'POST', headers: authorization, body: JSON.stringify({ type: 'pamper' }) });
     expect(first.response.status).toBe(200);
-    expect(first.body.data).toMatchObject({ counted: true, pet: { happiness: 55 } });
+    expect(first.body.data).toMatchObject({ counted: true, pet: { happiness: 58 } }); // Pingo (fácil): carinho rende 1,5×.
     // Segundo toque na mesma hora: o pato reage, mas não conta; pelo sync também não.
     const second = await request('/api/v1/pets/me/interactions', { method: 'POST', headers: authorization, body: JSON.stringify({ type: 'pamper' }) });
-    expect(second.body.data).toMatchObject({ counted: false, pet: { happiness: 55 } });
+    expect(second.body.data).toMatchObject({ counted: false, pet: { happiness: 58 } });
     const viaSync = await request('/api/v1/sync/push', { method: 'POST', headers: authorization, body: JSON.stringify({ operations: [
       { opId: crypto.randomUUID(), type: 'pet.interact', resourceId: crypto.randomUUID(), payload: { type: 'pamper' } },
       { opId: crypto.randomUUID(), type: 'pet.interact', resourceId: crypto.randomUUID(), payload: { type: 'play' } },
