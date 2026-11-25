@@ -49,7 +49,7 @@ describe('pendingInactivityWindows', () => {
 });
 
 describe('mimar', () => {
-  const stats = { hunger: 50, energy: 50, happiness: 50, statsUpdatedAt: now };
+  const stats = { hunger: 50, energy: 50, happiness: 50, statsUpdatedAt: now, speciesId: 'mare' };
 
   it('é grátis e dá +5 de felicidade', () => {
     expect(nextStats(stats, now, PAMPER_BOOST)).toMatchObject({ happiness: 55, energy: 50, hunger: 50 });

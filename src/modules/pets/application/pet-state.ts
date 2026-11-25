@@ -8,7 +8,7 @@ import { dayBounds, localDateKey } from '../../../shared/time/zoned.js';
 import { notify } from '../../notifications/application/notify.js';
 import { streakFor } from '../../rewards/application/streak.js';
 import { recordSyncChange } from '../../sync/infrastructure/change-log.js';
-import { decayStats, nextStats } from '../domain/stats.js';
+import { decayStats, nextStats, scaledPenalty } from '../domain/stats.js';
 import { INACTIVITY_PENALTY, OVERDUE_PENALTY, moodFor, pendingInactivityWindows, type DailyGoal, type Mood } from '../domain/mood.js';
 
 type Pet = typeof pets.$inferSelect;
@@ -31,7 +31,7 @@ export async function refreshPetState(tx: Transaction, userId: string, now = new
   if (overdue.length) {
     await tx.update(tasks).set({ overdueProcessedAt: now }).where(inArray(tasks.id, overdue.map((task) => task.id)));
   }
-  const happinessLoss = overdue.length * OVERDUE_PENALTY + windows * INACTIVITY_PENALTY;
+  const happinessLoss = scaledPenalty(overdue.length * OVERDUE_PENALTY + windows * INACTIVITY_PENALTY, pet.speciesId);
   const [updated] = await tx.update(pets).set({
     ...nextStats(pet, now, { happiness: -happinessLoss }),
     overdueStreak: pet.overdueStreak + overdue.length,

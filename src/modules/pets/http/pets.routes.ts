@@ -10,6 +10,7 @@ import { AppError } from '../../../shared/errors/app-error.js';
 import { recordSyncChange } from '../../sync/infrastructure/change-log.js';
 import { pamperPet } from '../application/interact-pet.js';
 import { petView, refreshPetState } from '../application/pet-state.js';
+import { nextStats } from '../domain/stats.js';
 
 const speciesId = z.string().min(1).max(40);
 /** RN09: 2 a 15 caracteres visíveis, sem marcação nem caracteres de controle. */
@@ -76,7 +77,8 @@ petsRouter.post('/me/switch', async (req: AuthenticatedRequest, res) => {
     const now = new Date(rows[0].now);
     await tx.update(petCompanions).set({ endedAt: now }).where(and(eq(petCompanions.petId, current.id), isNull(petCompanions.endedAt)));
     await tx.insert(petCompanions).values({ userId, petId: current.id, speciesId: input.speciesId, name: input.name, startedAt: now });
-    const [switched] = await tx.update(pets).set({ speciesId: input.speciesId, name: input.name, version: sql`${pets.version} + 1` })
+    // Fecha os status com o ritmo do pato que sai: daqui em diante vale a dificuldade do novo.
+    const [switched] = await tx.update(pets).set({ ...nextStats(current, now), speciesId: input.speciesId, name: input.name, version: sql`${pets.version} + 1` })
       .where(eq(pets.id, current.id)).returning();
     await recordSyncChange(tx, { userId, entityType: 'pet', entityId: switched.id, changeType: 'upsert', version: switched.version, data: switched });
     return switched;
